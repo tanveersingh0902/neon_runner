@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neon Cyber Runner — a fast-paced neon arcade game. Dodge falling obstacles and survive the grid.">
+    <title>Neon Cyber Runner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           CSS RESET & BASE
+           ============================================ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ============================================
+           DESIGN TOKENS
+           ============================================ */
+        :root {
+            --color-bg-deep:      #02020f;
+            --color-bg-surface:   #080820;
+            --color-bg-card:      #0b0b28;
+            --color-bg-panel:     rgba(8, 8, 32, 0.92);
+            --color-border:       #1c1c50;
+            --color-border-glow:  rgba(0,255,255,0.18);
+
+            --color-neon-cyan:    #00f5ff;
+            --color-neon-magenta: #e040fb;
+            --color-neon-green:   #00e676;
+            --color-neon-red:     #ff1744;
+            --color-neon-orange:  #ff9100;
+            --color-neon-yellow:  #ffea00;
+
+            --color-text-primary: #dde6ff;
+            --color-text-muted:   #5a6080;
+            --color-text-dim:     #383860;
+
+            --font-display: 'Orbitron', 'Courier New', monospace;
+            --font-ui:      'Inter', system-ui, sans-serif;
+            --font-mono:    'Courier New', Courier, monospace;
+
+            --glow-cyan:    0 0 8px #00f5ff, 0 0 24px rgba(0,245,255,0.25);
+            --glow-magenta: 0 0 8px #e040fb, 0 0 24px rgba(224,64,251,0.25);
+            --glow-green:   0 0 8px #00e676, 0 0 24px rgba(0,230,118,0.25);
+            --glow-red:     0 0 8px #ff1744, 0 0 24px rgba(255,23,68,0.30);
+
+            --radius-sm:  6px;
+            --radius-md:  10px;
+            --radius-lg:  16px;
+            --transition: 0.18s ease;
+        }
+
+        /* ============================================
+           PAGE LAYOUT
+           ============================================ */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--color-bg-deep);
+            background-image:
+                radial-gradient(ellipse 80% 60% at 50% -10%,
+                    rgba(0,245,255,0.06) 0%, transparent 70%);
+            color: var(--color-text-primary);
+            font-family: var(--font-ui);
+            overflow-x: hidden;
+        }
+
+        /* Animated perspective grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,245,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ============================================
+           GAME HEADING
+           ============================================ */
+        .game-title {
+            position: relative;
+            z-index: 1;
+            margin-top: 2.25rem;
+            margin-bottom: 1.75rem;
+            text-align: center;
+        }
+
+        .game-title h1 {
+            font-family: var(--font-display);
+            font-size: clamp(1.4rem, 4.5vw, 2.6rem);
+            font-weight: 900;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--color-neon-cyan);
+            text-shadow: var(--glow-cyan);
+            line-height: 1.1;
+        }
+
+        /* Glowing underline accent */
+        .game-title h1::after {
+            content: '';
+            display: block;
+            height: 2px;
+            width: 60%;
+            margin: 8px auto 0;
+            background: linear-gradient(90deg,
+                transparent, var(--color-neon-cyan), transparent);
+            opacity: 0.7;
+            border-radius: 2px;
+        }
+
+        .game-title .subtitle {
+            display: block;
+            margin-top: 0.55rem;
+            font-family: var(--font-ui);
+            font-size: clamp(0.58rem, 1.8vw, 0.75rem);
+            font-weight: 600;
+            letter-spacing: 0.45em;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+        }
+
+        /* ============================================
+           GAME CONTAINER
+           ============================================ */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 860px;
+            padding: 18px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background-color: var(--color-bg-card);
+            box-shadow:
+                0 0 0 1px var(--color-border-glow),
+                0 0 40px rgba(0,245,255,0.06),
+                0 32px 64px rgba(0,0,0,0.6),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        /* ============================================
+           HUD (SCORE DISPLAY)
+           ============================================ */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding: 10px 20px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg,
+                rgba(0,0,0,0.55) 0%, rgba(5,5,28,0.8) 100%);
+            font-family: var(--font-display);
+            font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+            letter-spacing: 0.05em;
+            gap: 8px;
+        }
+
+        .hud-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--color-border);
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .hud-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 52px;
+        }
+
+        .hud-label {
+            color: var(--color-text-dim);
+            font-size: 0.58em;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-family: var(--font-ui);
+        }
+
+        .hud-value {
+            font-weight: 700;
+            font-size: 1.15em;
+            min-width: 3ch;
+            text-align: center;
+            line-height: 1;
+        }
+
+        #currentScore {
+            color: var(--color-neon-green);
+            text-shadow: var(--glow-green);
+        }
+
+        #highScore {
+            color: var(--color-neon-orange);
+            text-shadow: 0 0 8px var(--color-neon-orange);
+        }
+
+        #obstacleCount {
+            color: var(--color-neon-red);
+            text-shadow: var(--glow-red);
+        }
+
+        /* ============================================
+           CANVAS WRAPPER
+           ============================================ */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+            box-shadow:
+                0 0 0 1px rgba(0,245,255,0.10),
+                0 0 30px rgba(0,245,255,0.04),
+                inset 0 0 60px rgba(0,0,0,0.4);
+            line-height: 0;
+        }
+
+        /* Subtle corner accents */
+        .canvas-wrapper::before,
+        .canvas-wrapper::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--color-neon-cyan);
+            border-style: solid;
+            opacity: 0.5;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .canvas-wrapper::before {
+            top: 0; left: 0;
+            border-width: 2px 0 0 2px;
+            border-radius: var(--radius-md) 0 0 0;
+        }
+        .canvas-wrapper::after {
+            bottom: 0; right: 0;
+            border-width: 0 2px 2px 0;
+            border-radius: 0 0 var(--radius-md) 0;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            background-color: var(--color-bg-surface);
+        }
+
+        /* ============================================
+           CONTROLS AREA
+           ============================================ */
+        .controls-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-top: 14px;
+        }
+
+        /* Action button — READY state (cyan) */
+        .btn-start {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 34px;
+            border: 1.5px solid var(--color-neon-cyan);
+            border-radius: var(--radius-md);
+            background: rgba(0,245,255,0.05);
+            color: var(--color-neon-cyan);
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition:
+                background var(--transition),
+                color var(--transition),
+                box-shadow var(--transition),
+                border-color var(--transition),
+                transform 0.1s ease;
+            box-shadow: var(--glow-cyan);
+        }
+        .btn-start:hover,
+        .btn-start:focus-visible {
+            background: var(--color-neon-cyan);
+            color: var(--color-bg-deep);
+            outline: none;
+            box-shadow: 0 0 24px rgba(0,245,255,0.7), 0 0 48px rgba(0,245,255,0.2);
+        }
+        .btn-start:active { transform: scale(0.96); }
+
+        .btn-sound {
+            flex-shrink: 0;
+            padding: 11px 15px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: rgba(0,0,0,0.28);
+            color: var(--color-text-primary);
+            font-family: var(--font-display);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: background var(--transition), border-color var(--transition), color var(--transition);
+        }
+        .btn-sound:hover,
+        .btn-sound:focus-visible {
+            border-color: var(--color-neon-cyan);
+            background: rgba(0,245,255,0.10);
+            color: var(--color-neon-cyan);
+            outline: none;
+        }
+
+        /* GAME_OVER state — red restart */
+        .btn-start.btn-restart {
+            border-color: var(--color-neon-red);
+            color:        var(--color-neon-red);
+            background:   rgba(255,23,68,0.06);
+            box-shadow:   var(--glow-red);
+        }
+        .btn-start.btn-restart:hover,
+        .btn-start.btn-restart:focus-visible {
+            background: var(--color-neon-red);
+            color:      var(--color-bg-deep);
+            box-shadow: 0 0 24px rgba(255,23,68,0.7), 0 0 48px rgba(255,23,68,0.2);
+        }
+
+        /* Hidden during PLAYING */
+        .btn-start.btn-hidden {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Instructions panel */
+        .instructions {
+            flex: 1;
+            min-width: 210px;
+            padding: 12px 16px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: rgba(0,0,0,0.28);
+            font-family: var(--font-ui);
+            font-size: clamp(0.65rem, 1.6vw, 0.78rem);
+            line-height: 1.8;
+            color: var(--color-text-muted);
+        }
+        .instructions-title {
+            display: block;
+            margin-bottom: 8px;
+            font-family: var(--font-display);
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: var(--color-text-primary);
+            text-transform: uppercase;
+        }
+        .instructions ul { list-style: none; padding: 0; }
+        .instructions li { padding: 1px 0; display: flex; align-items: center; gap: 6px; }
+
+        .key {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 9px;
+            border: 1px solid var(--color-neon-magenta);
+            border-radius: 5px;
+            background: rgba(224,64,251,0.08);
+            color: var(--color-neon-magenta);
+            font-family: var(--font-mono);
+            font-size: 0.82em;
+            font-weight: 700;
+            letter-spacing: 0;
+            box-shadow: 0 0 6px rgba(224,64,251,0.2);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .game-footer {
+            position: relative;
+            z-index: 1;
+            margin-top: 1.8rem;
+            margin-bottom: 1.2rem;
+            font-family: var(--font-ui);
+            font-size: 0.68rem;
+            color: var(--color-text-dim);
+            letter-spacing: 0.12em;
+            text-align: center;
+        }
+        .game-footer span { color: var(--color-text-muted); }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 640px) {
+            .game-title { margin-top: 1.25rem; margin-bottom: 1.25rem; }
+            .game-container { width: 96%; padding: 12px; }
+            .hud { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+            .hud-divider { display: none; }
+            .controls-area { flex-direction: column; align-items: stretch; }
+            .btn-start { width: 100%; justify-content: center; }
+        }
+
+        @media (max-width: 400px) {
+            .game-title h1 { letter-spacing: 0.12em; }
+            .hud { justify-content: space-around; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         GAME HEADING
+         ============================================ -->
+    <header class="game-title">
+        <h1>Neon Cyber Runner</h1>
+        <span class="subtitle">Survive the Neon Grid</span>
+    </header>
+
+    <!-- ============================================
+         GAME CONTAINER
+         ============================================ -->
+    <main class="game-container">
+
+        <!-- HUD -->
+        <div class="hud" role="status" aria-label="Game score">
+            <div class="hud-item">
+                <span class="hud-label">Score</span>
+                <span class="hud-value" id="currentScore">0</span>
+            </div>
+            <div class="hud-divider" aria-hidden="true"></div>
+            <div class="hud-item">
+                <span class="hud-label">Threats</span>
+                <span class="hud-value" id="obstacleCount">0</span>
+            </div>
+            <div class="hud-divider" aria-hidden="true"></div>
+            <div class="hud-item">
+                <span class="hud-label">Best</span>
+                <span class="hud-value" id="highScore">0</span>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="800" height="400">
+                Your browser does not support the HTML5 Canvas.
+            </canvas>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-area">
+            <button class="btn-start" id="startButton" type="button" aria-label="Start game">
+                &#9654;&nbsp; Start Game
+            </button>
+
+            <button class="btn-sound" id="soundButton" type="button" aria-label="Mute sound" aria-pressed="false">
+                &#128266; Sound On
+            </button>
+
+            <section class="instructions" aria-label="Game controls">
+                <span class="instructions-title">Controls</span>
+                <ul>
+                    <li><span class="key">Space</span><span class="key">&uarr;</span>&nbsp;Jump</li>
+                    <li><span class="key">&larr;</span><span class="key">&rarr;</span>&nbsp;Move</li>
+                    <li><span class="key">Enter</span>&nbsp;Start &amp; Restart</li>
+                    <li><span class="key">F</span>&nbsp;Toggle FPS</li>
+                </ul>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="game-footer">
+        Neon Cyber Runner &mdash; <span>Built with &#9749; and AI</span>
+    </footer>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        // === CANVAS SETUP ===
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // === DOM REFERENCES ===
+        const startButton = document.getElementById('startButton');
+        const currentScoreDisplay = document.getElementById('currentScore');
+        const highScoreDisplay = document.getElementById('highScore');
+        const obstacleCountDisplay = document.getElementById('obstacleCount');
+        const soundButton = document.getElementById('soundButton');
+
+        // === SOUND ===
+        // Effects are synthesized locally: no files or third-party libraries.
+        // The context is created only from a click/key interaction, so browsers
+        // that block autoplay remain silent until the player has interacted.
+        let audioContext = null;
+        let masterGain = null;
+        let soundMuted = false;
+        let audioHasUserInteracted = false;
+
+        function enableAudioFromInteraction() {
+            audioHasUserInteracted = true;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+
+            if (!audioContext) {
+                try {
+                    audioContext = new AudioContextClass();
+                    masterGain = audioContext.createGain();
+                    masterGain.gain.value = soundMuted ? 0 : 0.16;
+                    masterGain.connect(audioContext.destination);
+                } catch (error) {
+                    // Audio is optional; leave the game fully playable if unavailable.
+                    audioContext = null;
+                    masterGain = null;
+                    return;
+                }
+            }
+
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().catch(function () {});
+            }
+        }
+
+        function playTone(frequency, duration, type, volume, frequencyEnd) {
+            if (soundMuted || !audioHasUserInteracted || !audioContext || !masterGain || audioContext.state !== 'running') return;
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, now);
+            if (frequencyEnd) oscillator.frequency.exponentialRampToValueAtTime(frequencyEnd, now + duration);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(volume, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            oscillator.connect(gain);
+            gain.connect(masterGain);
+            oscillator.start(now);
+            oscillator.stop(now + duration + 0.02);
+        }
+
+        function playMilestoneSound() {
+            playTone(660, 0.12, 'square', 0.45, 990);
+        }
+
+        function playGameOverSound() {
+            playTone(220, 0.45, 'sawtooth', 0.5, 70);
+        }
+
+        function updateSoundButton() {
+            soundButton.textContent = soundMuted ? '\ud83d\udd07 Sound Off' : '\ud83d\udd0a Sound On';
+            soundButton.setAttribute('aria-label', soundMuted ? 'Unmute sound' : 'Mute sound');
+            soundButton.setAttribute('aria-pressed', String(soundMuted));
+        }
+
+        // === CONSTANTS ===
+        const CANVAS_WIDTH = canvas.width;   // 800
+        const CANVAS_HEIGHT = canvas.height;  // 400
+        const GROUND_Y = CANVAS_HEIGHT - 50;
+        const PLAYER_SPEED = 300;            // Pixels per second (used with delta time)
+        const GRAVITY = 1800;                // Pixels per second² — pulls player down
+        const JUMP_FORCE = -600;             // Pixels per second — negative = upward
+        const OBSTACLE_SPAWN_INTERVAL = 1.2; // Seconds between obstacle spawns (starting value)
+        const MAX_OBSTACLES = 5;
+
+        // === DIFFICULTY CONSTANTS ===
+        // Speed range for falling obstacles (px/sec)
+        const OBS_SPEED_MIN   = 180;   // starting base speed
+        const OBS_SPEED_MAX   = 420;   // cap — keeps the game playable
+        // Spawn interval range (seconds) — shorter = more frequent
+        const SPAWN_INT_MIN   = 0.55;  // fastest spawn rate allowed
+        const SPAWN_INT_MAX   = 1.20;  // starting spawn rate
+        // How many seconds to ramp from min difficulty to max difficulty
+        const DIFFICULTY_RAMP = 90;    // full ramp reached after 90 s of play
+        // Score awarded per second of survival
+        const SCORE_PER_SEC   = 3;
+
+        // Obstacle shape types — drawn differently in drawObstacles()
+        const OBSTACLE_SHAPES = ['rect', 'diamond', 'cross'];
+        // Colour palettes per shape type (outer glow / inner fill / highlight)
+        const OBSTACLE_PALETTES = {
+            rect:    { glow: '#ff8800', outer: '#ff8800', inner: '#ff3300', edge: '#ffd080' },
+            diamond: { glow: '#ff00ff', outer: '#ff00ff', inner: '#cc00cc', edge: '#ffaaff' },
+            cross:   { glow: '#00ffff', outer: '#00ffff', inner: '#0088aa', edge: '#aaffff' },
+        };
+
+        // === GAME STATES ===
+        // Three canonical states control all logic branching:
+        //
+        //  'start'    (READY)     → idle canvas + Start button visible
+        //                            Enter / click → startGame()
+        //  'playing'  (PLAYING)   → update + draw every frame; button hidden
+        //                            collision → triggerGameOver()
+        //  'gameover' (GAME_OVER) → update frozen; overlay drawn; Restart shown
+        //                            Enter / click → startGame()
+        //
+        // State only changes in two places:
+        //   startGame()       sets  'playing'
+        //   triggerGameOver() sets  'gameover'
+        let gameState = 'start';
+
+        // === LOOP GUARD ===
+        // Prevents multiple animation loops from running simultaneously.
+        // If startButton or Enter is pressed rapidly, we must NOT call
+        // requestAnimationFrame again if a loop is already running.
+        let loopRunning = false;
+
+        // === INPUT TRACKING ===
+        // Instead of reacting to individual keydown events, we track WHICH keys
+        // are currently held down. The game loop reads this every frame.
+        // This gives smooth, continuous movement while a key is held.
+        const keys = {};
+
+        // === DEBUG: FPS COUNTER (toggled with F key) ===
+        let showFPS = false;
+        let frameCount = 0;
+        let fpsTime = 0;
+        let currentFPS = 0;
+
+        // === PLAYER OBJECT ===
+        const player = {
+            // Dimensions
+            width: 30,
+            height: 50,
+
+            // Position — left side of canvas, standing on the ground
+            // x = left edge of the player rectangle
+            // y = top edge of the player rectangle (calculated so bottom edge sits on GROUND_Y)
+            x: 80,
+            y: GROUND_Y - 50,  // GROUND_Y minus player height
+
+            // Movement
+            velocityY: 0,
+            speed: PLAYER_SPEED,
+            isGrounded: true,
+
+            // Visual style
+            color: '#ff00ff',       // Neon magenta — main body
+            glowColor: '#ff00ff',   // Glow halo color
+            visorColor: '#00ffff',  // Cyan visor accent
+        };
+
+        // === OBSTACLES ===
+        // Each obstacle stores its position, dimensions, and falling speed.
+        const obstacles = [];
+        let obstacleSpawnTimer = 0;
+
+        // === SCORING & DIFFICULTY STATE ===
+        let score            = 0;       // current round score
+        let nextSoundMilestone = 10;    // next score that triggers a short synth chime
+        let survivalTime     = 0;       // seconds alive this round (drives difficulty)
+        // Current dynamic values — recalculated each frame by updateDifficulty()
+        let currentObstacleSpeed  = OBS_SPEED_MIN;
+        let currentSpawnInterval  = SPAWN_INT_MAX;
+
+        // -------------------------------------------------------
+        //  PERSISTENT HIGH SCORE
+        // -------------------------------------------------------
+        // localStorage stores strings keyed by name, persisting across
+        // page refreshes and browser restarts (until manually cleared).
+        //
+        // API used:
+        //   localStorage.getItem(key)       → string | null
+        //   localStorage.setItem(key, val)  → void
+        //
+        // We sanitise the loaded value defensively:
+        //   • null  (key never set)  → 0
+        //   • NaN   (corrupt data)   → 0
+        //   • negative              → 0
+        //   • valid positive int    → used as-is
+        // -------------------------------------------------------
+        const HS_KEY = 'neonRunner_highScore';
+
+        function loadHighScore() {
+            const raw = localStorage.getItem(HS_KEY);
+            const parsed = parseInt(raw, 10);
+            // parseInt returns NaN for null / non-numeric strings
+            return (Number.isFinite(parsed) && parsed >= 0) ? parsed : 0;
+        }
+
+        function saveHighScore(value) {
+            localStorage.setItem(HS_KEY, String(value));
+        }
+
+        // Initialise from storage — the HUD is updated right after.
+        let highScore = loadHighScore();
+        highScoreDisplay.textContent = highScore;
+
+        // === KEYBOARD EVENT LISTENERS ===
+
+        // keydown — fires when a key is pressed (and repeats if held, but we
+        // don't care about repeats because we just set the flag to true).
+        document.addEventListener('keydown', function (e) {
+            enableAudioFromInteraction();
+            // Prevent the browser from scrolling on game keys
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                e.preventDefault();
+            }
+
+            // Record this key as "currently pressed"
+            keys[e.code] = true;
+
+            // --- State transitions triggered by key press ---
+            // Start / restart from the start screen OR game-over screen
+            if (e.code === 'Enter' && (gameState === 'start' || gameState === 'gameover')) {
+                startGame();
+            }
+
+            // --- Jump: only on first press, not on key-repeat ---
+            // e.repeat is true when the OS auto-repeats a held key.
+            // We ignore repeats so holding Space doesn't re-trigger jump.
+            if (!e.repeat && (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW')) {
+                if (gameState === 'playing' && player.isGrounded) {
+                    player.velocityY = JUMP_FORCE;
+                    player.isGrounded = false;
+                }
+            }
+
+            // --- Debug: toggle FPS counter ---
+            if (e.code === 'KeyF') {
+                showFPS = !showFPS;
+            }
+        });
+
+        // keyup — fires once when a key is released.
+        // We set the flag to false so the game loop stops moving the player
+        // in that direction on the very next frame.
+        document.addEventListener('keyup', function (e) {
+            keys[e.code] = false;
+        });
+
+        // -------------------------------------------------------
+        //  GAME LIFECYCLE
+        // -------------------------------------------------------
+
+        // Transition from READY or GAME_OVER → PLAYING.
+        // Fully resets all mutable state so no data bleeds between rounds.
+        function startGame() {
+            gameState = 'playing';
+
+            // --- Player ---
+            player.x = 80;
+            player.y = GROUND_Y - player.height;
+            player.velocityY = 0;
+            player.isGrounded = true;
+
+            // --- Obstacles ---
+            obstacles.length = 0;
+            obstacleSpawnTimer = 0;
+
+            // --- Score / difficulty ---
+            score                = 0;
+            nextSoundMilestone   = 10;
+            survivalTime         = 0;
+            currentObstacleSpeed = OBS_SPEED_MIN;
+            currentSpawnInterval = SPAWN_INT_MAX;
+            currentScoreDisplay.textContent = '0';
+
+            // --- Button: hide during play (can't click mid-game) ---
+            startButton.classList.add('btn-hidden');
+            startButton.classList.remove('btn-restart');
+            startButton.textContent = '\u25B6 Start Game';
+            startButton.setAttribute('aria-label', 'Start game');
+        }
+
+        // Triggered once per collision — transitions PLAYING → GAME_OVER.
+        // Because update() returns immediately when state !== 'playing',
+        // this function cannot be called more than once per round.
+        function triggerGameOver() {
+            gameState = 'gameover';
+            playGameOverSound();
+
+            // Persist high score across rounds AND across page refreshes
+            if (score > highScore) {
+                highScore = score;
+                highScoreDisplay.textContent = highScore;
+                saveHighScore(highScore);   // write to localStorage
+            }
+
+            // --- Button: show as Restart with red styling ---
+            startButton.classList.remove('btn-hidden');
+            startButton.classList.add('btn-restart');
+            startButton.textContent = '\u21BA Restart';
+            startButton.setAttribute('aria-label', 'Restart game');
+        }
+
+        // -------------------------------------------------------
+        //  UPDATE — "What changed this frame?" (data only, no drawing)
+        // -------------------------------------------------------
+        // The update function calculates new positions, applies physics,
+        // and checks game rules. It NEVER touches ctx or draws anything.
+        // Think of it as the game's "brain."
+        // -------------------------------------------------------
+        function update(deltaTime) {
+            if (gameState !== 'playing') return;
+
+            updatePlayer(deltaTime);
+            updateObstacles(deltaTime);
+            updateScore(deltaTime);      // accumulate score from survival time
+            updateDifficulty();          // recalculate speed & spawn rate
+            checkCollisions();           // must run AFTER positions are updated
+        }
+
+        // -------------------------------------------------------
+        //  SCORING
+        // -------------------------------------------------------
+        // Score = survival time (seconds) × SCORE_PER_SEC.
+        // Computed only inside update(), which is gated on 'playing',
+        // so the score freezes automatically the instant gameState changes.
+        // The HUD DOM write happens here (update) not in draw(), keeping
+        // draw() free of any state mutations.
+        // -------------------------------------------------------
+        function updateScore(deltaTime) {
+            survivalTime += deltaTime;
+            score = Math.floor(survivalTime * SCORE_PER_SEC);
+            currentScoreDisplay.textContent = score;
+
+            if (score >= nextSoundMilestone) {
+                playMilestoneSound();
+                nextSoundMilestone += 10;
+            }
+        }
+
+        // -------------------------------------------------------
+        //  PROGRESSIVE DIFFICULTY
+        // -------------------------------------------------------
+        // t = survivalTime clamped to [0, DIFFICULTY_RAMP].
+        // progress = t / DIFFICULTY_RAMP  →  0.0 (start) … 1.0 (max ramp)
+        //
+        // Both obstacle speed and spawn interval are lerped linearly:
+        //   speed    : OBS_SPEED_MIN  → OBS_SPEED_MAX   (higher = harder)
+        //   interval : SPAWN_INT_MAX  → SPAWN_INT_MIN   (lower  = harder)
+        //
+        // Using lerp keeps the math simple and the ramp smooth.
+        // -------------------------------------------------------
+        function updateDifficulty() {
+            const progress = Math.min(survivalTime / DIFFICULTY_RAMP, 1.0);
+            currentObstacleSpeed = OBS_SPEED_MIN + (OBS_SPEED_MAX - OBS_SPEED_MIN) * progress;
+            currentSpawnInterval = SPAWN_INT_MAX - (SPAWN_INT_MAX - SPAWN_INT_MIN) * progress;
+        }
+
+        // -------------------------------------------------------
+        //  COLLISION DETECTION — Axis-Aligned Bounding Box (AABB)
+        // -------------------------------------------------------
+        // Two rectangles A and B overlap when ALL four of these
+        // conditions hold simultaneously:
+        //
+        //   A.left   < B.right          A.right  > B.left
+        //   A.top    < B.bottom         A.bottom > B.top
+        //
+        // If ANY condition is false, there is a gap on that axis
+        // and the rectangles do NOT touch.
+        //
+        // Example:
+        //   Player  at x=100, y=300, w=30, h=50  → right=130, bottom=350
+        //   Obstacle at x=120, y=320, w=40, h=30  → right=160, bottom=350
+        //
+        //   100 < 160  ✓   130 > 120  ✓   300 < 350  ✓   350 > 320  ✓
+        //   → All four pass → COLLISION
+        // -------------------------------------------------------
+        function checkCollisions() {
+            // gameState guard: never fires more than once per round.
+            // update() already returns early when state !== 'playing',
+            // so this function only executes while the game is live.
+            const pLeft   = player.x;
+            const pRight  = player.x + player.width;
+            const pTop    = player.y;
+            const pBottom = player.y + player.height;
+
+            for (const obs of obstacles) {
+                const oLeft   = obs.x;
+                const oRight  = obs.x + obs.width;
+                const oTop    = obs.y;
+                const oBottom = obs.y + obs.height;
+
+                if (pLeft < oRight && pRight > oLeft &&
+                    pTop  < oBottom && pBottom > oTop) {
+                    triggerGameOver();
+                    return;   // stop checking once a hit is found
+                }
+            }
+        }
+
+        // Create obstacles at timed intervals, up to the active obstacle limit.
+        function updateObstacles(deltaTime) {
+            obstacleSpawnTimer += deltaTime;
+
+            // Use the dynamic interval set by updateDifficulty()
+            if (obstacleSpawnTimer >= currentSpawnInterval) {
+                obstacleSpawnTimer -= currentSpawnInterval;
+
+                if (obstacles.length < MAX_OBSTACLES) {
+                    const shape = OBSTACLE_SHAPES[Math.floor(Math.random() * OBSTACLE_SHAPES.length)];
+                    // Diamonds & crosses use square-ish dimensions for clean geometry
+                    const size = 26 + Math.random() * 22;
+                    const width  = (shape === 'rect') ? (24 + Math.random() * 28) : size;
+                    const height = (shape === 'rect') ? (18 + Math.random() * 18) : size;
+
+                    // Speed = current base speed ± 15 % random variance
+                    const speedVariance = currentObstacleSpeed * 0.15;
+
+                    obstacles.push({
+                        x:      Math.random() * (CANVAS_WIDTH - width),
+                        y:      -height,
+                        width:  width,
+                        height: height,
+                        speed:  currentObstacleSpeed + (Math.random() * 2 - 1) * speedVariance,
+                        shape:  shape,
+                        phase:  Math.random() * Math.PI * 2,
+                        trail:  [],
+                    });
+                }
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+
+                // Save trail position before moving (keep last 6 snapshots)
+                obs.trail.push(obs.y);
+                if (obs.trail.length > 6) obs.trail.shift();
+
+                obs.y += obs.speed * deltaTime;
+
+                // Remove once fully below the canvas
+                if (obs.y > CANVAS_HEIGHT) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update live threat counter in HUD
+            obstacleCountDisplay.textContent = obstacles.length;
+        }
+
+        // Handle player movement and physics
+        function updatePlayer(deltaTime) {
+            // --- Horizontal movement (left / right) ---
+            // speed (px/sec) × deltaTime (sec) = pixels this frame.
+            const distance = player.speed * deltaTime;
+
+            if (keys['ArrowLeft'] || keys['KeyA']) {
+                player.x -= distance;
+            }
+            if (keys['ArrowRight'] || keys['KeyD']) {
+                player.x += distance;
+            }
+
+            // Horizontal boundary clamping
+            if (player.x < 0) {
+                player.x = 0;
+            }
+            if (player.x + player.width > CANVAS_WIDTH) {
+                player.x = CANVAS_WIDTH - player.width;
+            }
+
+            // --- Vertical movement (jump + gravity) ---
+            // Apply gravity: accelerate downward every frame
+            // velocity += gravity × deltaTime  (v = v + a·t)
+            player.velocityY += GRAVITY * deltaTime;
+
+            // Apply velocity: move the player vertically
+            // position += velocity × deltaTime  (p = p + v·t)
+            player.y += player.velocityY * deltaTime;
+
+            // --- Ground collision ---
+            // If the player's bottom edge passes below GROUND_Y, snap to ground
+            const playerBottom = player.y + player.height;
+            if (playerBottom >= GROUND_Y) {
+                player.y = GROUND_Y - player.height;  // sit exactly on ground
+                player.velocityY = 0;                  // stop falling
+                player.isGrounded = true;              // allow jumping again
+            }
+        }
+
+        // -------------------------------------------------------
+        //  DRAW — "What does the player see?" (visuals only, no logic)
+        // -------------------------------------------------------
+        // The draw function reads positions calculated by update() and
+        // paints them onto the canvas. It NEVER changes game data.
+        // Think of it as the game's "eyes."
+        //
+        // WHY SEPARATE?
+        //   update() could run at a different rate than draw().
+        //   Keeping them apart makes the code easier to debug:
+        //   • Bug in position? → look at update.
+        //   • Bug in visuals?  → look at draw.
+        // -------------------------------------------------------
+
+        // Draw the background: deep gradient + subtle scanlines
+        function drawBackground() {
+            // Base gradient: top is slightly lighter (distant sky), bottom is deep
+            const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+            grad.addColorStop(0,   '#060618');
+            grad.addColorStop(0.6, '#08082a');
+            grad.addColorStop(1,   '#04041a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Faint horizontal scanlines (every 4 px)
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            for (let sy = 0; sy < CANVAS_HEIGHT; sy += 4) {
+                ctx.fillRect(0, sy, CANVAS_WIDTH, 1);
+            }
+            ctx.restore();
+
+            // Very faint vertical grid lines
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,245,255,0.025)';
+            ctx.lineWidth = 1;
+            for (let gx = 0; gx <= CANVAS_WIDTH; gx += 80) {
+                ctx.beginPath();
+                ctx.moveTo(gx, 0);
+                ctx.lineTo(gx, CANVAS_HEIGHT);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // Draw the ground: glowing double line + tick marks
+        function drawGround() {
+            ctx.save();
+
+            // Outer glow line
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur  = 16;
+            ctx.strokeStyle = 'rgba(0,245,255,0.35)';
+            ctx.lineWidth   = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y + 2);
+            ctx.lineTo(CANVAS_WIDTH, GROUND_Y + 2);
+            ctx.stroke();
+
+            // Bright core line
+            ctx.shadowBlur  = 6;
+            ctx.strokeStyle = '#00f5ff';
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
+            ctx.stroke();
+
+            // Tick marks every 40 px below the ground line
+            ctx.shadowBlur  = 0;
+            ctx.strokeStyle = 'rgba(0,245,255,0.2)';
+            ctx.lineWidth   = 1;
+            for (let tx = 0; tx < CANVAS_WIDTH; tx += 40) {
+                ctx.beginPath();
+                ctx.moveTo(tx, GROUND_Y + 1);
+                ctx.lineTo(tx, GROUND_Y + 5);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw falling obstacles — each shape type has its own neon style.
+        // A short comet-tail trail is drawn behind each obstacle as it falls.
+        function drawObstacles() {
+            const now = performance.now() / 1000; // seconds (for pulsing glow)
+
+            for (const obs of obstacles) {
+                const pal = OBSTACLE_PALETTES[obs.shape];
+                // Pulse the glow intensity with a sine wave using per-obstacle phase
+                const pulse = 0.6 + 0.4 * Math.sin(now * 4 + obs.phase);
+                const glowBlur = 10 + 14 * pulse;
+
+                // --- Comet trail (drawn first, underneath the body) ---
+                for (let t = 0; t < obs.trail.length; t++) {
+                    const alpha = (t + 1) / (obs.trail.length + 1) * 0.35 * pulse;
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = pal.outer;
+                    _drawObstacleShape(obs.shape, obs.x, obs.trail[t], obs.width, obs.height);
+                    ctx.restore();
+                }
+
+                // --- Main body ---
+                ctx.save();
+                ctx.shadowColor = pal.glow;
+                ctx.shadowBlur  = glowBlur;
+                ctx.fillStyle   = pal.outer;
+                _drawObstacleShape(obs.shape, obs.x, obs.y, obs.width, obs.height);
+
+                // Inner highlight (darker fill, no glow)
+                ctx.shadowBlur  = 0;
+                ctx.fillStyle   = pal.inner;
+                _drawObstacleShape(obs.shape, obs.x, obs.y, obs.width, obs.height, 0.25);
+
+                // Edge outline
+                ctx.strokeStyle = pal.edge;
+                ctx.lineWidth   = 1.5;
+                ctx.globalAlpha = 0.8;
+                _strokeObstacleShape(obs.shape, obs.x, obs.y, obs.width, obs.height);
+
+                ctx.restore();
+            }
+        }
+
+        // ---- Shape helpers ---- //
+
+        // Fill a shape at (x,y) with given dimensions.
+        // inset: fractional padding (0 = full size, 0.25 = shrunk by 25% on each side)
+        function _drawObstacleShape(shape, x, y, w, h, inset) {
+            inset = inset || 0;
+            const ix = x + w * inset;
+            const iy = y + h * inset;
+            const iw = w * (1 - inset * 2);
+            const ih = h * (1 - inset * 2);
+            const cx = ix + iw / 2;
+            const cy = iy + ih / 2;
+
+            ctx.beginPath();
+            if (shape === 'rect') {
+                ctx.rect(ix, iy, iw, ih);
+            } else if (shape === 'diamond') {
+                ctx.moveTo(cx,        iy);        // top
+                ctx.lineTo(ix + iw,   cy);        // right
+                ctx.lineTo(cx,        iy + ih);   // bottom
+                ctx.lineTo(ix,        cy);        // left
+                ctx.closePath();
+            } else if (shape === 'cross') {
+                // Plus-sign / cross shape
+                const tx = iw / 3;
+                const ty = ih / 3;
+                ctx.moveTo(ix + tx,        iy);
+                ctx.lineTo(ix + tx * 2,    iy);
+                ctx.lineTo(ix + tx * 2,    iy + ty);
+                ctx.lineTo(ix + iw,        iy + ty);
+                ctx.lineTo(ix + iw,        iy + ty * 2);
+                ctx.lineTo(ix + tx * 2,    iy + ty * 2);
+                ctx.lineTo(ix + tx * 2,    iy + ih);
+                ctx.lineTo(ix + tx,        iy + ih);
+                ctx.lineTo(ix + tx,        iy + ty * 2);
+                ctx.lineTo(ix,             iy + ty * 2);
+                ctx.lineTo(ix,             iy + ty);
+                ctx.lineTo(ix + tx,        iy + ty);
+                ctx.closePath();
+            }
+            ctx.fill();
+        }
+
+        // Stroke (outline) a shape at (x,y).
+        function _strokeObstacleShape(shape, x, y, w, h) {
+            _drawObstacleShape(shape, x, y, w, h, 0);
+            // Re-open the path for stroke — re-draw then stroke
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+            ctx.beginPath();
+            if (shape === 'rect') {
+                ctx.rect(x + 1, y + 1, w - 2, h - 2);
+            } else if (shape === 'diamond') {
+                ctx.moveTo(cx,     y + 1);
+                ctx.lineTo(x+w-1,  cy);
+                ctx.lineTo(cx,     y+h-1);
+                ctx.lineTo(x + 1,  cy);
+                ctx.closePath();
+            } else if (shape === 'cross') {
+                const tx = w / 3;
+                const ty = h / 3;
+                ctx.moveTo(x + tx,      y + 1);
+                ctx.lineTo(x + tx*2,    y + 1);
+                ctx.lineTo(x + tx*2,    y + ty);
+                ctx.lineTo(x + w - 1,   y + ty);
+                ctx.lineTo(x + w - 1,   y + ty*2);
+                ctx.lineTo(x + tx*2,    y + ty*2);
+                ctx.lineTo(x + tx*2,    y + h - 1);
+                ctx.lineTo(x + tx,      y + h - 1);
+                ctx.lineTo(x + tx,      y + ty*2);
+                ctx.lineTo(x + 1,       y + ty*2);
+                ctx.lineTo(x + 1,       y + ty);
+                ctx.lineTo(x + tx,      y + ty);
+                ctx.closePath();
+            }
+            ctx.stroke();
+        }
+
+        // Draw the player: a sleek futuristic cyber-runner
+        function drawPlayer() {
+            const px = player.x;
+            const py = player.y;
+            const pw = player.width;
+            const ph = player.height;
+            const now = performance.now() / 1000;
+
+            ctx.save();
+
+            // === Outer ambient glow ===
+            ctx.shadowColor = '#e040fb';
+            ctx.shadowBlur  = 22;
+            ctx.fillStyle   = '#e040fb';
+            ctx.fillRect(px, py, pw, ph);
+
+            // === Body gradient fill ===
+            ctx.shadowBlur = 0;
+            const bodyGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+            bodyGrad.addColorStop(0, '#cc00cc');
+            bodyGrad.addColorStop(0.5, '#e040fb');
+            bodyGrad.addColorStop(1, '#9a009a');
+            ctx.fillStyle = bodyGrad;
+            ctx.fillRect(px, py, pw, ph);
+
+            // === Head / helmet (top 28%) ===
+            const headH = ph * 0.28;
+            ctx.fillStyle = '#8800aa';
+            ctx.fillRect(px, py, pw, headH);
+
+            // Helmet highlight strip
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillRect(px + 2, py + 1, pw - 4, 3);
+
+            // === Visor — glowing cyan stripe ===
+            const visorY = py + headH * 0.38;
+            ctx.save();
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur  = 12;
+            // Visor background
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(px + 2, visorY, pw - 4, 6);
+            // Visor glow core
+            ctx.fillStyle = '#00f5ff';
+            ctx.fillRect(px + 3, visorY + 1, pw - 6, 4);
+            ctx.restore();
+
+            // === Antenna ===
+            const antPulse = 0.7 + 0.3 * Math.sin(now * 5);
+            ctx.save();
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur  = 8 * antPulse;
+            ctx.strokeStyle = 'rgba(0,245,255,0.6)';
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(px + pw / 2, py);
+            ctx.lineTo(px + pw / 2, py - 8);
+            ctx.stroke();
+            // Antenna tip dot
+            ctx.fillStyle = '#00f5ff';
+            ctx.beginPath();
+            ctx.arc(px + pw / 2, py - 9, 1.8 * antPulse, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // === Belt / chest accent ===
+            const beltY = py + ph * 0.52;
+            ctx.fillStyle = 'rgba(0,245,255,0.3)';
+            ctx.fillRect(px, beltY, pw, 2);
+
+            // === Energy bar (bottom 20% of body) — flickers with survivalTime ===
+            const barH     = ph * 0.18;
+            const barY     = py + ph - barH;
+            const energyFill = Math.abs(Math.sin(now * 2)) * 0.4 + 0.6; // 60-100%
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(px + 2, barY + 2, pw - 4, barH - 4);
+            ctx.save();
+            ctx.shadowColor = '#00e676';
+            ctx.shadowBlur  = 6;
+            ctx.fillStyle   = '#00e676';
+            ctx.fillRect(px + 2, barY + 2, (pw - 4) * energyFill, barH - 4);
+            ctx.restore();
+
+            // === Legs gap ===
+            const legMid = px + pw / 2;
+            ctx.strokeStyle = 'rgba(4,4,26,0.9)';
+            ctx.lineWidth   = 2;
+            ctx.beginPath();
+            ctx.moveTo(legMid, py + ph * 0.75);
+            ctx.lineTo(legMid, py + ph);
+            ctx.stroke();
+
+            // === Boot highlights ===
+            ctx.save();
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur  = 6;
+            ctx.fillStyle   = '#00f5ff';
+            ctx.fillRect(px + 2,       py + ph - 4, 5, 4);
+            ctx.fillRect(px + pw - 7,  py + ph - 4, 5, 4);
+            ctx.restore();
+
+            // === Shoulder pips ===
+            ctx.fillStyle = '#00f5ff';
+            ctx.fillRect(px,       py + headH, 3, 3);
+            ctx.fillRect(px+pw-3,  py + headH, 3, 3);
+
+            ctx.restore();
+        }
+
+        // === SCREEN DRAW FUNCTIONS ===
+
+        // Draw the READY / start screen
+        function drawStartScreen() {
+            drawBackground();
+            drawGround();
+            drawPlayer();
+
+            const cx = CANVAS_WIDTH / 2;
+            const cy = CANVAS_HEIGHT / 2;
+
+            // Frosted panel
+            ctx.save();
+            ctx.fillStyle = 'rgba(4, 4, 22, 0.78)';
+            const panW = 420, panH = 110;
+            ctx.fillRect(cx - panW/2, cy - panH/2 - 10, panW, panH);
+            // Panel border
+            ctx.strokeStyle = 'rgba(0,245,255,0.25)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(cx - panW/2, cy - panH/2 - 10, panW, panH);
+            ctx.restore();
+
+            // Title text
+            ctx.save();
+            ctx.shadowColor = '#00f5ff';
+            ctx.shadowBlur  = 28;
+            ctx.fillStyle   = '#00f5ff';
+            ctx.font        = 'bold 26px Orbitron, "Courier New", monospace';
+            ctx.textAlign   = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('PRESS START TO RUN', cx, cy - 22);
+            ctx.restore();
+
+            // Sub-prompt
+            ctx.save();
+            ctx.fillStyle = 'rgba(160,160,200,0.75)';
+            ctx.font = '13px Inter, "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Click the button below  •  or press  Enter', cx, cy + 12);
+            ctx.restore();
+
+            // Pulsing bottom hint line
+            const hint = 0.5 + 0.5 * Math.sin(performance.now() / 500);
+            ctx.save();
+            ctx.globalAlpha = 0.35 + 0.35 * hint;
+            ctx.fillStyle   = '#e040fb';
+            ctx.font        = '11px Inter, monospace';
+            ctx.textAlign   = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Use arrow keys or WASD to dodge', cx, cy + 34);
+            ctx.restore();
+        }
+
+        // Draw the active gameplay frame
+        function drawPlayingScreen() {
+            drawBackground();
+            drawGround();
+            drawObstacles();
+            drawPlayer();
+
+            // Optional FPS counter (toggle with F key)
+            if (showFPS) {
+                drawFPS();
+            }
+        }
+
+        // Draw the FPS counter in the top-left corner (debug tool)
+        function drawFPS() {
+            ctx.save();
+            ctx.fillStyle = '#00ff41';
+            ctx.font = '12px "Courier New", monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('FPS: ' + currentFPS, 8, 8);
+            ctx.restore();
+        }
+
+        // Draw the GAME_OVER overlay on top of the frozen scene
+        function drawGameOverScreen() {
+            drawBackground();
+            drawGround();
+            drawObstacles();
+            drawPlayer();
+
+            const cx = CANVAS_WIDTH / 2;
+            const cy = CANVAS_HEIGHT / 2;
+
+            // === Full-canvas dim vignette ===
+            ctx.save();
+            const vigGrad = ctx.createRadialGradient(cx, cy, 60, cx, cy, CANVAS_WIDTH * 0.72);
+            vigGrad.addColorStop(0, 'rgba(5,5,18,0.60)');
+            vigGrad.addColorStop(1, 'rgba(2,2,10,0.88)');
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.restore();
+
+            // === Frosted panel ===
+            const panW = 400, panH = 160;
+            const panX = cx - panW / 2;
+            const panY = cy - panH / 2 - 8;
+            ctx.save();
+            ctx.fillStyle = 'rgba(8, 4, 22, 0.88)';
+            ctx.fillRect(panX, panY, panW, panH);
+            // Panel border — neon red
+            ctx.shadowColor = '#ff1744';
+            ctx.shadowBlur  = 18;
+            ctx.strokeStyle = 'rgba(255,23,68,0.55)';
+            ctx.lineWidth   = 1.5;
+            ctx.strokeRect(panX, panY, panW, panH);
+            // Top accent bar
+            ctx.shadowBlur  = 0;
+            ctx.fillStyle   = 'rgba(255,23,68,0.7)';
+            ctx.fillRect(panX, panY, panW, 3);
+            ctx.restore();
+
+            // === "GAME OVER" heading ===
+            ctx.save();
+            ctx.shadowColor  = '#ff1744';
+            ctx.shadowBlur   = 32;
+            ctx.fillStyle    = '#ff1744';
+            ctx.font         = 'bold 42px Orbitron, "Courier New", monospace';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GAME OVER', cx, panY + 44);
+            ctx.restore();
+
+            // === Divider ===
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,23,68,0.3)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(panX + 24, panY + 72);
+            ctx.lineTo(panX + panW - 24, panY + 72);
+            ctx.stroke();
+            ctx.restore();
+
+            // === Final score row ===
+            ctx.save();
+            ctx.fillStyle    = 'rgba(160,160,200,0.6)';
+            ctx.font         = '12px Inter, monospace';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('FINAL SCORE', cx, panY + 94);
+            ctx.restore();
+
+            ctx.save();
+            ctx.shadowColor  = '#00e676';
+            ctx.shadowBlur   = 18;
+            ctx.fillStyle    = '#00e676';
+            ctx.font         = 'bold 28px Orbitron, "Courier New", monospace';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(score, cx, panY + 118);
+            ctx.restore();
+
+            // === New high score badge ===
+            if (score === highScore && highScore > 0) {
+                ctx.save();
+                ctx.shadowColor = '#ff9100';
+                ctx.shadowBlur  = 14;
+                ctx.fillStyle   = '#ff9100';
+                ctx.font        = '11px Inter, monospace';
+                ctx.textAlign   = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('\u2736  NEW BEST  \u2736', cx, panY + 143);
+                ctx.restore();
+            }
+
+            // === Restart hint (below panel) ===
+            const hint2 = 0.5 + 0.5 * Math.sin(performance.now() / 600);
+            ctx.save();
+            ctx.globalAlpha  = 0.45 + 0.35 * hint2;
+            ctx.fillStyle    = '#e040fb';
+            ctx.font         = '12px Inter, monospace';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Press Enter or click Restart', cx, panY + panH + 18);
+            ctx.restore();
+
+            if (showFPS) drawFPS();
+        }
+
+        // === MAIN DRAW ROUTER ===
+        // Calls the right draw function based on the current game state
+        function draw() {
+            switch (gameState) {
+                case 'start':
+                    drawStartScreen();
+                    break;
+                case 'playing':
+                    drawPlayingScreen();
+                    break;
+                case 'gameover':
+                    drawGameOverScreen();
+                    break;
+            }
+        }
+
+        // -------------------------------------------------------
+        //  GAME LOOP — the heartbeat of the game
+        // -------------------------------------------------------
+        // requestAnimationFrame asks the browser to call our function
+        // right before the next screen repaint (~60 times/sec).
+        //
+        // Each tick:  update(deltaTime) → draw() → schedule next tick
+        //
+        // deltaTime = seconds since last frame. We multiply all
+        // movement by deltaTime so the game runs at the same speed
+        // on 60 Hz, 75 Hz, 120 Hz, and 144 Hz monitors.
+        // -------------------------------------------------------
+        let lastTimestamp = 0;
+
+        function gameLoop(timestamp) {
+            // Calculate delta time in seconds.
+            // Clamp to max 50 ms to avoid a huge jump if the tab was
+            // backgrounded or the browser hiccupped.
+            const deltaTime = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+            lastTimestamp = timestamp;
+
+            // --- FPS counter (updates once per second) ---
+            frameCount++;
+            fpsTime += deltaTime;
+            if (fpsTime >= 1.0) {
+                currentFPS = frameCount;
+                frameCount = 0;
+                fpsTime = 0;
+            }
+
+            // 1) UPDATE — move things, apply physics, check rules
+            update(deltaTime);
+
+            // 2) DRAW — repaint the canvas with the new state
+            draw();
+
+            // 3) SCHEDULE — ask for the next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // === START BUTTON HANDLER ===
+        startButton.addEventListener('click', function () {
+            enableAudioFromInteraction();
+            if (gameState === 'start' || gameState === 'gameover') {
+                startGame();
+            }
+        });
+
+        soundButton.addEventListener('click', function () {
+            enableAudioFromInteraction();
+            soundMuted = !soundMuted;
+            if (masterGain && audioContext) {
+                masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+                masterGain.gain.setValueAtTime(soundMuted ? 0 : 0.16, audioContext.currentTime);
+            }
+            updateSoundButton();
+        });
+
+        // === KICK OFF ===
+        // Start the loop exactly once. The loopRunning flag prevents
+        // accidental duplicate loops if this code path is hit again.
+        function startLoop() {
+            if (loopRunning) return;   // already running — do nothing
+            loopRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        startLoop();
+    </script>
+
+</body>
+</html>

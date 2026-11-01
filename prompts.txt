@@ -1,0 +1,358 @@
+Prompt 1: Plan the Game Before Writing Code
+
+Act as a senior game designer, JavaScript developer, and technical architect who specializes in building beginner-friendly browser games.
+I want to build a polished 2D arcade game called "Neon Cyber Runner" using AI-assisted development.
+CONTEXT:
+* The game will be built during a 90-minute live workshop.
+* The audience consists of working professionals and recent graduates.
+* Some participants may have no programming experience.
+* The objective is to demonstrate how AI can help us plan, build, test, debug, and improve a real application.
+GAME CONCEPT:The player controls a futuristic character that must dodge incoming obstacles, survive as long as possible, and achieve a high score.
+TECHNICAL CONSTRAINTS:
+* HTML, CSS, and vanilla JavaScript only.
+* Use the HTML Canvas API for game rendering.
+* No frameworks, external libraries, backend, or database.
+* The game must run locally in a modern browser.
+* All code should eventually fit inside one index.html file.
+YOUR TASK:
+1. Define the core gameplay loop.
+2. Identify the minimum viable product (MVP).
+3. List the essential features and optional enhancements separately.
+4. Define the keyboard controls.
+5. Explain the scoring system and collision rules.
+6. Describe the game states: start, playing, paused if included, and game over.
+7. Recommend a visual design direction.
+8. Identify the main technical components.
+9. Identify likely implementation risks and bugs.
+10. Create a realistic 90-minute development plan.
+IMPORTANT:Do not write any code yet.
+Keep the first version simple enough to build and test reliably within the available time.
+Present the result as a concise game design document with clear priorities.
+
+===================================================
+
+Prompt 2: Convert the plan into development tasks
+
+Using the approved Neon Cyber Runner game design, create a practical technical specification.
+Break the game into small, independently testable development tasks.
+For each task, provide:
+* Task name.
+* Purpose.
+* Features included.
+* JavaScript concepts involved.
+* Dependencies on previous tasks.
+* Acceptance criteria.
+* How to test it manually.
+Organize the tasks into these stages:
+Stage 1: HTML structure and game canvas.
+Stage 2: Game rendering and player creation.
+Stage 3: Keyboard controls and player movement.Stage 4: Obstacle generation and movement.
+Stage 5: Collision detection.
+Stage 6: Scoring and difficulty progression.
+Stage 7: Start screen and game-over screen.
+Stage 8: Restart functionality.
+Stage 9: Visual polish and responsive layout.Stage 10: Final testing and debugging.
+Keep the scope appropriate for a 90-minute beginner workshop.
+Do not generate code yet.
+At the end, identify which features are essential and which should be skipped if we fall behind schedule.
+
+===================================================
+
+Prompt 3: Create the HTML and CSS Foundations
+
+Act as a senior frontend developer.
+We are building Neon Cyber Runner, a browser-based arcade game using HTML, CSS, and vanilla JavaScript.
+Implement Stage 1 of our development plan.
+For now, create only the initial application structure and visual interface.
+REQUIREMENTS:
+1. Create a single index.html file.
+2. Include all HTML, CSS, and JavaScript in the same file.
+3. Add a page title and a game heading.
+4. Create a centered game container.
+5. Add a canvas for rendering the game.
+6. Display an initial score of zero.
+7. Add a start button.
+8. Add a short instruction section explaining the controls.
+9. Use a polished futuristic visual style with a dark background and neon-inspired accents.
+10. Make the interface responsive.
+Do not implement obstacles, collision detection, scoring logic, or the actual game loop yet.
+CODE REQUIREMENTS:
+* Use semantic HTML where appropriate.
+* Keep CSS organized and readable.
+* Use meaningful IDs and class names.
+* Avoid external dependencies.
+ACCEPTANCE CRITERIA:
+* The page loads without errors.
+* The game container and canvas are visible.
+* The start button is displayed.
+* The interface looks polished and readable on desktop and mobile.
+Return the complete index.html file.
+After the code, explain how to save and run it and list the manual tests I should perform.
+
+===================================================
+
+Prompt 4: Render the Player
+
+Continue developing the existing Neon Cyber Runner application.
+Implement only the player-rendering functionality.
+REQUIREMENTS:
+1. Create a player object with properties for position, width, height, and movement speed.
+2. Draw the player on the existing HTML canvas.
+3. Position the player near the bottom-center of the canvas.
+4. Give the player a futuristic neon-inspired appearance using canvas drawing commands.
+5. Ensure the player is visible against the background.
+6. Keep the player inside the horizontal boundaries of the canvas.
+Do not implement keyboard movement, obstacles, scoring, or collision detection yet.
+Preserve the existing HTML structure and visual design.
+Return the complete updated index.html file.
+Explain:
+* How the player object works.
+* How its position is represented.
+* How the canvas draws the player.
+* How I can verify that the player renders correctly.
+
+===================================================
+
+Prompt 5: Implement Keyboard Controls
+
+Extend the existing Neon Cyber Runner game.
+Implement keyboard-controlled player movement.
+REQUIREMENTS:
+1. Move the player left using the Left Arrow or A key.
+2. Move the player right using the Right Arrow or D key.
+3. Support continuous movement while a key is held down.
+4. Stop movement when the relevant key is released.
+5. Prevent the player from leaving the canvas boundaries.
+6. Keep movement smooth and consistent across different computer speeds.
+7. Handle keyboard input without interfering with the rest of the game.
+8. Avoid unexpected movement when the player is not actively playing.
+Use the existing player object and rendering logic.
+Do not add obstacles or scoring yet.
+Return the complete updated index.html file.
+Explain how keyboard events work and how to test each control.
+
+===================================================
+
+Prompt 6: Implement the Game Loop
+
+Continue developing Neon Cyber Runner.
+Implement a reliable game loop using requestAnimationFrame.
+REQUIREMENTS:
+1. Create a function that updates the game state.
+2. Create a function that renders the game.
+3. Call requestAnimationFrame to schedule subsequent frames.
+4. Update and render the player consistently.
+5. Clear or redraw the canvas correctly on each frame.
+6. Keep keyboard movement responsive.
+7. Prevent multiple animation loops from starting accidentally.
+8. Keep the code understandable for beginners.
+Preserve all existing functionality.
+Do not implement obstacles or collision detection yet.
+Return the complete updated index.html file.
+Explain the difference between updating game state and rendering the game, and provide a simple manual test.
+
+===================================================
+
+Prompt 7: Generate Obstacles
+
+Extend the existing Neon Cyber Runner game by adding falling obstacles.
+REQUIREMENTS:
+1. Generate obstacles at random horizontal positions near the top of the canvas.
+2. Make obstacles move downward over time.
+3. Give each obstacle position, width, height, and speed properties.
+4. Draw obstacles using a visual style consistent with the game.
+5. Remove obstacles after they move beyond the bottom of the canvas.
+6. Spawn new obstacles at controlled intervals.
+7. Prevent the screen from becoming overloaded with obstacles.
+8. Ensure obstacles continue to render correctly while the player moves.
+Keep the implementation simple and efficient.
+Do not implement collision detection or game-over logic yet.
+Preserve all existing features.
+Return the complete updated index.html file.
+Explain how obstacles are represented, generated, updated, and removed.
+
+ 
+===================================================
+
+Prompt 8: Implement Collision Detection
+
+Extend the existing Neon Cyber Runner game by implementing collision detection.
+REQUIREMENTS:
+1. Detect when the player collides with a falling obstacle.
+2. Use a simple, reliable rectangular collision-detection method.
+3. When a collision occurs, stop active gameplay.
+4. Prevent the score from continuing to increase after the game ends.
+5. Prevent new obstacles from being generated after the game ends.
+6. Display a game-over message.
+7. Ensure the collision logic does not repeatedly trigger after the game has ended.
+8. Preserve existing player controls and obstacle rendering.
+Do not implement a lives system or advanced collision physics.
+Return the complete updated index.html file.
+Explain the collision-detection algorithm with a simple example and provide at least three manual tests.
+
+===================================================
+Prompt 9: Add Scoring and Progressive Difficulty
+
+Improve the existing Neon Cyber Runner game.
+Implement scoring and progressive difficulty.
+SCORING:
+* Start the score at zero.
+* Increase the score as the player survives.
+* Display the current score prominently.
+* Ensure the score stops changing when the game ends.
+DIFFICULTY:
+* Gradually increase obstacle speed as the player survives longer.
+* Optionally increase obstacle spawn frequency within safe limits.
+* Define reasonable minimum and maximum values for obstacle speed and spawn frequency.
+* Ensure the game remains playable.
+TECHNICAL REQUIREMENTS:
+* Avoid updating the score incorrectly on every render operation.
+* Use elapsed time or another consistent mechanism for score progression.
+* Preserve player movement, obstacle generation, collision detection, and game-over logic.
+* Do not rewrite unrelated parts of the application.
+Return the complete updated index.html file.
+Explain how scoring and progressive difficulty work and how to test them.
+
+===================================================
+Prompt 10: Add a start, Game Over and Restart states
+
+Review the current Neon Cyber Runner implementation and complete its game-state management.
+The game must support these states:
+1. READY: The game has not started.
+2. PLAYING: The player can move and avoid obstacles.
+3. GAME_OVER: Gameplay has stopped after a collision.
+REQUIREMENTS:
+* Show a start screen with a working Start button.
+* Begin gameplay when Start is clicked.
+* Display a game-over overlay when the player collides with an obstacle.
+* Show the final score.
+* Provide a working Restart button.
+* Reset the score, player position, obstacles, and relevant timers when restarting.
+* Ensure only one game loop runs at a time.
+* Ensure keyboard controls behave correctly in every state.
+* Prevent obstacles or scores from carrying over incorrectly between games.
+Do not add a pause feature or other new gameplay mechanics.
+Preserve the existing visual design and working features.
+Return the complete updated index.html file.
+Explain how the three states interact and provide a manual test checklist.
+
+===================================================
+
+Prompt 11: Add a Persistent High score
+
+Add a persistent high-score feature to the existing Neon Cyber Runner game.
+REQUIREMENTS:
+1. Display the current score and best score.
+2. Save the best score using browser localStorage.
+3. Update the best score when the player achieves a new record.
+4. Preserve the best score after restarting the game.
+5. Preserve the best score after refreshing the browser.
+6. Handle the situation where no previous high score exists.
+7. Do not allow an invalid or negative stored value to break the game.
+Preserve all existing gameplay functionality.
+Use vanilla JavaScript only.
+Return the complete updated index.html file.
+Explain how localStorage works and provide steps to verify that the best score persists after a refresh.
+
+===================================================
+
+Prompt 12: Upgrade the Visual Design
+
+Act as a senior game UI designer and frontend engineer.
+Improve the visual quality of the existing Neon Cyber Runner game without changing its core mechanics.
+DESIGN DIRECTION:
+Create a polished, futuristic arcade experience suitable for a professional portfolio demonstration.
+VISUAL IMPROVEMENTS:
+* Improve typography and spacing.
+* Refine the game container and canvas presentation.
+* Use a cohesive dark theme with restrained neon accents.
+* Improve buttons, score displays, and game-state overlays.
+* Add subtle visual effects where they improve clarity.
+* Make the player and obstacles visually distinct.
+* Improve the start and game-over screens.
+* Make the layout responsive across common desktop and mobile screen sizes.
+TECHNICAL REQUIREMENTS:
+* Use existing HTML, CSS, and vanilla JavaScript.
+* Do not introduce external libraries.
+* Preserve the existing gameplay, collision detection, scoring, high score, and restart functionality.
+* Avoid excessive animations or effects that reduce performance.
+* Maintain readable contrast and keyboard accessibility.
+* Do not sacrifice usability for visual effects.
+Return the complete updated index.html file.
+Summarize the design changes and list the features that must be regression-tested.
+
+
+===================================================
+
+Prompt 13: Add Sound Effects (Optional)
+
+Add simple sound effects to the existing Neon Cyber Runner game.
+Requirements:
+* Add a sound effect for collecting a point or reaching a scoring milestone.
+* Add a sound effect when the game ends.
+* Provide a mute/unmute button.
+* Avoid external audio files and third-party dependencies.
+* If appropriate, use the Web Audio API to generate simple sounds.
+* Handle browser audio restrictions gracefully.
+* Do not play sounds before the user interacts with the game.
+* Ensure that disabling sound actually silences the effects.
+Preserve all existing functionality.
+Return the complete updated index.html file and explain how to test the audio controls.
+
+
+========================================================================
+
+Prompt 14 — Conduct a Code Review
+
+Act as a senior JavaScript engineer conducting a code review.
+Review my complete Neon Cyber Runner application.
+Inspect the code for:
+1. JavaScript syntax errors.
+2. Incorrect keyboard event handling.
+3. Multiple animation loops.
+4. Incorrect collision detection.
+5. Incorrect score updates.
+6. Obstacles that are never removed.
+7. Restart bugs and state-reset issues.
+8. Incorrect difficulty progression.
+9. High-score persistence problems.
+10. Canvas resizing and responsiveness issues.
+11. Unnecessary or confusing code.
+12. Potential performance problems.
+For each issue:
+* Explain the problem.
+* Describe how it could affect the game.
+* Assign a severity: Critical, High, Medium, or Low.
+* Suggest a minimal fix.
+Do not assume that the code is correct merely because it runs.
+Separate confirmed issues from potential risks.
+Do not rewrite the entire application immediately. First provide the review findings and prioritize the fixes.
+
+========================================================================
+
+Prompt 15 — Run a Final Testing Review
+
+Create a practical manual testing plan for my completed Neon Cyber Runner game.
+Cover:
+* Initial page loading.
+* Starting a new game.
+* Player movement and canvas boundaries.
+* Obstacle spawning and movement.
+* Collision detection.
+* Score calculation.
+* Difficulty progression.
+* Game-over behavior.
+* Restart functionality.
+* High-score persistence.
+* Keyboard interaction.
+* Responsive layout.
+* Browser console errors.
+For each test, provide:
+1. Test case ID.
+2. Preconditions.
+3. Steps.
+4. Expected result.
+5. Pass/fail status column.
+Prioritize tests that could reveal serious gameplay defects.
+Do not claim that the game has passed a test unless the test has actually been executed.
+Finish with a short release-readiness checklist.
